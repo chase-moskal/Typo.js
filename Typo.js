@@ -105,6 +105,7 @@
 		if (!(this instanceof Typo)) return new Typo(x, mode);
 
 		this.x = x; // The value being scrutinized by the chain.
+		this.d = undefined; // Default value
 
 		if (mode === undefined)  mode = '&&';
 		else if (mode === 'and') mode = '&&';
@@ -115,6 +116,11 @@
 
 		this.pass = (mode === '||') ? false : true;
 	}
+
+	Typo.prototype.default = function (d) {
+		this.d = d;
+		return this;
+	};
 
 
 	//////// ALL CHAIN: MULTIPLE INPUTS ////////////////////////////////////////
@@ -136,6 +142,10 @@
 	  // TypoAll inherits from Typo
 
 	TypoAll.prototype.constructor = TypoAll;
+
+	TypoAll.prototype.default = undefined;
+	  // Disabling default functionality
+	  // for all chains, because it only makes sense for single-inputs.
 
 	Typo.All = Typo.all = TypoAll; // Attaching to Typo with synonym
 
@@ -283,11 +293,14 @@
 	 //   If no fallback is provided, a default error will be thrown.
 
 	Typo.prototype.or = Typo.prototype.o = function endChain (y) {
-	 	if (this.pass) return this.x; // PASSBACK SUCCESSFUL VALUE
-		else {
-			if (y === undefined)         throw new Error("Typo: Chain failed");
-			else if (y instanceof Error) throw y;  // ERROR ON FAILURE
-			else                         return y; // DEFAULT VALUE ON FAILURE
+		if (this.d !== undefined && this.x === undefined) return this.d;
+		  // Default values
+
+	 	if (this.pass) return this.x; // SUCCESSFUL VALUE, PASS IT BACK
+		else { // CHAIN FAILED!
+			if (y === undefined) throw new Error("Typo: Chain failed"); // Default chain error
+			else if (y instanceof Error) throw y; // Custom error specified
+			else return y; // Fallback value specified
 		}
 	};
 
@@ -313,12 +326,13 @@
 		a.array          = a.arr;
 		a.arrayLike      = a.arrlike;
 
+		a.notEmpty       = a.bearing;
+		a.regExp         = a.regex;
+
 		a.greater        = a.gt;
 		a.less           = a.lt;
 		a.greaterOrEqual = a.gte;
 		a.lessOrEqual    = a.lte;
-
-		a.regExp = a.regex;
 
 		return synonymize;
 	})
